@@ -23,6 +23,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.util.Log;
 
+import com.google.common.collect.ImmutableMap;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.strongloop.android.remoting.JsonUtil;
@@ -41,6 +42,7 @@ public class RestAdapter extends Adapter {
 
     private HttpClient client;
     private RestContract contract;
+    private Object accessToken;
 
     public RestAdapter(Context context, String url) {
         super(context, url);
@@ -63,6 +65,14 @@ public class RestAdapter extends Adapter {
      */
     public void setContract(RestContract contract) {
         this.contract = contract;
+    }
+
+    public void setAccessToken(Object accessToken) {
+    	this.accessToken = accessToken;
+    }
+    
+    public Object getAccessToken() {
+    	return accessToken;
     }
 
     @Override
@@ -138,7 +148,13 @@ public class RestAdapter extends Adapter {
             throw new IllegalStateException("Adapter not connected");
         }
 
-        client.request(verb, path, parameters,
+        Map<String, Object> combinedParameters = new HashMap<String, Object>();
+        if ( parameters != null )
+        	combinedParameters.putAll(parameters);
+        if ( accessToken != null )  
+        	combinedParameters.put("access_token", accessToken);
+        
+        client.request(verb, path, combinedParameters,
         		HttpClient.ParameterEncoding.JSON, callback);
     }
 
