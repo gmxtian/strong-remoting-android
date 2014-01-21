@@ -70,7 +70,7 @@ public class RestAdapter extends Adapter {
     }
     
     public void removeAccessToken() {
-    	client.addHeader("Authorization", null);
+        client.addHeader("Authorization", null);
     }
     
     @Override
@@ -141,13 +141,13 @@ public class RestAdapter extends Adapter {
     }
 
     private void request(String path, String verb,
-    		Map<String, ? extends Object> parameters, Callback callback) {
+            Map<String, ? extends Object> parameters, Callback callback) {
         if (!isConnected()) {
             throw new IllegalStateException("Adapter not connected");
         }
 
         client.request(verb, path, parameters,
-        		HttpClient.ParameterEncoding.JSON, callback);
+                HttpClient.ParameterEncoding.JSON, callback);
     }
 
     //
@@ -173,7 +173,7 @@ public class RestAdapter extends Adapter {
             String appVersion = null;
             try {
                 PackageInfo pinfo = context.getPackageManager().getPackageInfo(
-                		context.getPackageName(), 0);
+                        context.getPackageName(), 0);
                 appVersion = pinfo.versionName;
             }
             catch (NameNotFoundException e) {
@@ -199,7 +199,7 @@ public class RestAdapter extends Adapter {
         public HttpClient(Context context, String baseUrl) {
             if (baseUrl == null) {
                 throw new IllegalArgumentException(
-                		"The baseUrl cannot be null");
+                        "The baseUrl cannot be null");
             }
 
             this.context = context;
@@ -222,9 +222,9 @@ public class RestAdapter extends Adapter {
             }
             String deviceName = getDeviceName();
             String androidVersion = android.os.Build.VERSION.RELEASE +
-            		"/API-" + android.os.Build.VERSION.SDK_INT;
+                    "/API-" + android.os.Build.VERSION.SDK_INT;
             String userAgent = appName + " (" + deviceName +
-            		" Android " + androidVersion + ")";
+                    " Android " + androidVersion + ")";
             setUserAgent(userAgent);
         }
 
@@ -245,7 +245,7 @@ public class RestAdapter extends Adapter {
             HttpEntity body = null;
             String charset = "utf-8";
             AsyncHttpResponseHandler httpCallback =
-            		new AsyncHttpResponseHandler() {
+                    new AsyncHttpResponseHandler() {
                 @Override
                 public void onSuccess(String response) {
                     if (LOG) {
@@ -269,33 +269,33 @@ public class RestAdapter extends Adapter {
 
             if (parameters != null) {
                 if ("GET".equalsIgnoreCase(method) ||
-                		"HEAD".equalsIgnoreCase(method) ||
-                		"DELETE".equalsIgnoreCase(method)) {
+                        "HEAD".equalsIgnoreCase(method) ||
+                        "DELETE".equalsIgnoreCase(method)) {
 
                     for (Map.Entry<String, ? extends Object> entry :
                             buildUrlQueryParameters(parameters).entrySet()) {
                         uri.appendQueryParameter(entry.getKey(),
-                        		String.valueOf(entry.getValue()));
+                                String.valueOf(entry.getValue()));
                     }
                 }
                 else if (parameterEncoding == ParameterEncoding.FORM_URL) {
-                	// NOTE: Code for "x-www-form-urlencoded" is not used
-                	// and is untested.
+                    // NOTE: Code for "x-www-form-urlencoded" is not used
+                    // and is untested.
                     contentType =
-                    		"application/x-www-form-urlencoded; charset=" +
-                    		charset;
+                            "application/x-www-form-urlencoded; charset=" +
+                            charset;
 
                     List<NameValuePair> nameValuePairs =
-                    		new ArrayList<NameValuePair>();
+                            new ArrayList<NameValuePair>();
                     for (Map.Entry<String, ? extends Object> entry :
-                    	parameters.entrySet()) {
+                        parameters.entrySet()) {
                         nameValuePairs.add(
-                        		new BasicNameValuePair(entry.getKey(),
-                        				String.valueOf(entry.getValue())));
+                                new BasicNameValuePair(entry.getKey(),
+                                        String.valueOf(entry.getValue())));
                     }
                     try {
                         body = new UrlEncodedFormEntity(nameValuePairs,
-                        		charset);
+                                charset);
                     }
                     catch (UnsupportedEncodingException e) {
                         // Won't happen
@@ -310,7 +310,7 @@ public class RestAdapter extends Adapter {
                     }
                     catch (JSONException e) {
                         Log.e("RestAdapter",
-                        		"Couldn't convert parameters to JSON", e);
+                                "Couldn't convert parameters to JSON", e);
                     }
                     try {
                         body = new StringEntity(s, charset);
@@ -344,7 +344,7 @@ public class RestAdapter extends Adapter {
             }
             else {
                 throw new IllegalArgumentException("Illegal method: " +
-                		method + ". Only GET, POST, PUT, DELETE supported.");
+                        method + ". Only GET, POST, PUT, DELETE supported.");
             }
         }
 

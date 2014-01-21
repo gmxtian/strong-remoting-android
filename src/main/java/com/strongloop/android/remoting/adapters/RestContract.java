@@ -35,7 +35,7 @@ import java.util.Map;
 public class RestContract {
 
     private Map<String, RestContractItem> items =
-    		new HashMap<String, RestContractItem>();
+            new HashMap<String, RestContractItem>();
 
     /**
      * Adds a single item to this contract. The item can be shared among
@@ -54,7 +54,7 @@ public class RestContract {
     public void addItem(RestContractItem item, String method) {
         if (item == null || method == null) {
             throw new IllegalArgumentException(
-            		"Neither item nor method can be null");
+                    "Neither item nor method can be null");
         }
         items.put(method, item);
     }
@@ -110,7 +110,7 @@ public class RestContract {
      * @return The complete, resolved URL.
      */
     public String getUrlForMethod(String method,
-    		Map<String, ? extends Object> parameters) {
+            Map<String, ? extends Object> parameters) {
         if (method == null) {
             throw new IllegalArgumentException("Method cannot be null");
         }
@@ -149,7 +149,7 @@ public class RestContract {
      * @return The rendered URL.
      */
     public String getUrl(String pattern,
-    		Map<String, ? extends Object> parameters) {
+            Map<String, ? extends Object> parameters) {
         if (pattern == null) {
             throw new IllegalArgumentException("Pattern cannot be null");
         }
@@ -160,7 +160,7 @@ public class RestContract {
         }
 
         for (Map.Entry<String, ? extends Object> entry :
-        	parameters.entrySet()) {
+            parameters.entrySet()) {
             String key = ":" + entry.getKey();
             String value = String.valueOf(entry.getValue());
             url = url.replace(key, value);
