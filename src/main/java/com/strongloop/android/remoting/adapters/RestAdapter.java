@@ -2,7 +2,9 @@
 
 package com.strongloop.android.remoting.adapters;
 
+import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +27,8 @@ import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.BinaryHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 import com.strongloop.android.remoting.JsonUtil;
 
 /**
@@ -107,7 +111,12 @@ public class RestAdapter extends Adapter {
         String verb = contract.getVerbForMethod(method);
         String path = contract.getUrlForMethod(method, parameters);
 
-        request(path, verb, parameters, callback);
+        boolean isMultipart = contract.getIsMultipartForMethod(method);
+        
+        if ( isMultipart )
+            requestMultipart(path, verb, parameters, callback);
+        else        
+            request(path, verb, parameters, callback);
     }
 
     /**
@@ -137,7 +146,12 @@ public class RestAdapter extends Adapter {
         String verb = contract.getVerbForMethod(method);
         String path = contract.getUrlForMethod(method, combinedParameters);
 
-        request(path, verb, combinedParameters, callback);
+        boolean isMultipart = contract.getIsMultipartForMethod(method);
+        
+        if ( isMultipart )
+            requestMultipart(path, verb, combinedParameters, callback);
+        else
+            request(path, verb, combinedParameters, callback);
     }
 
     private void request(String path, String verb,
@@ -150,6 +164,17 @@ public class RestAdapter extends Adapter {
                 HttpClient.ParameterEncoding.JSON, callback);
     }
 
+    private void requestMultipart(String path, String verb,
+            Map<String, ? extends Object> parameters, Callback callback) {
+        if (!isConnected()) {
+            throw new IllegalStateException("Adapter not connected");
+        }
+
+        client.request(verb, path, parameters,
+                HttpClient.ParameterEncoding.FORM_MULTIPART, callback);
+    }
+    
+    
     //
     // Mimic AFNetworking as much as possible.
     //
@@ -166,7 +191,8 @@ public class RestAdapter extends Adapter {
 
         enum ParameterEncoding {
             FORM_URL,
-            JSON
+            JSON,
+            FORM_MULTIPART
         }
 
         private static String getVersionName(Context context) {
@@ -246,6 +272,7 @@ public class RestAdapter extends Adapter {
             String charset = "utf-8";
             AsyncHttpResponseHandler httpCallback =
                     new AsyncHttpResponseHandler() {
+               
                 @Override
                 public void onSuccess(String response) {
                     if (LOG) {
@@ -264,11 +291,67 @@ public class RestAdapter extends Adapter {
                         Log.i("RestAdapter", "Error: " + response);
                     }
                     callback.onError(e);
-                }
+                }                
             };
 
+            boolean isMulti = false;
+            
             if (parameters != null) {
-                if ("GET".equalsIgnoreCase(method) ||
+                             
+                if (parameterEncoding == ParameterEncoding.FORM_MULTIPART) {
+                    
+                    isMulti = true;
+                    contentType = "multipart/form-data";
+
+                    String url = uri.build().toString();
+                    
+                    if ("POST".equalsIgnoreCase(method)) {
+                        
+                        RequestParams requestParams;
+                        try {
+                            requestParams = putInRequestParams(parameters);
+                        } catch (FileNotFoundException e1) {
+                           throw new IllegalArgumentException("Invalid File parameter");
+
+                        }
+                        post(url, requestParams, httpCallback);                        
+                    } 
+                    else if ("GET".equalsIgnoreCase(method)) {
+                        
+                        get(url, new BinaryHttpResponseHandler(new String[]{"image/jpeg", "application/json"}) {                            
+                            
+                            @Override
+                            public void onFailure(Throwable error, byte[] binaryData) {
+                                if (LOG) {
+                                    Log.i("RestAdapter", "BinaryError: " + error.toString());
+                                }
+                                callback.onError(error);                                                    
+                            }
+                            
+                            @Override
+                            public void onSuccess(byte[] binaryData) {
+                                if (LOG) {
+                                    Log.i("RestAdapter", "Binary Response Success");
+                                }
+                                try {
+                                    ByteBuffer bb = ByteBuffer.wrap(binaryData);
+                                    callback.onSuccess(null, bb);
+                                } catch (Throwable t) {
+                                    callback.onError(t);
+                                }                                
+                            }
+                            
+                        });
+                        
+                    }
+                    // TODO - Delete?
+                    else {
+                        throw new IllegalArgumentException("Illegal method for multiform: " +
+                                method + ". Only GET, POST, DELETE supported.");                        
+                    }
+                        
+                }            
+                else if ("GET".equalsIgnoreCase(method) ||
                         "HEAD".equalsIgnoreCase(method) ||
                         "DELETE".equalsIgnoreCase(method)) {
 
@@ -320,31 +403,36 @@ public class RestAdapter extends Adapter {
                         Log.e("RestAdapter", "Couldn't encode JSON params", e);
                     }
                 }
-            }
 
-            Header[] headers = {
-                    new BasicHeader("Accept", "application/json"),
-            };
-
-            String url = uri.build().toString();
-            if (LOG) {
-                Log.i("RestAdapter", method + " " + url);
             }
-            if ("GET".equalsIgnoreCase(method)) {
-                get(context, url, headers, null, httpCallback);
-            }
-            else if ("DELETE".equalsIgnoreCase(method)) {
-                delete(context, url, headers, httpCallback);
-            }
-            else if ("POST".equalsIgnoreCase(method)) {
-                post(context, url, headers, body, contentType, httpCallback);
-            }
-            else if ("PUT".equalsIgnoreCase(method)) {
-                put(context, url, headers, body, contentType, httpCallback);
-            }
-            else {
-                throw new IllegalArgumentException("Illegal method: " +
-                        method + ". Only GET, POST, PUT, DELETE supported.");
+            
+            if ( !isMulti )
+            {
+                Header[] headers = {
+                        new BasicHeader("Accept", "application/json"),
+                };
+    
+                String url = uri.build().toString();
+                if (LOG) {
+                    Log.i("RestAdapter", method + " " + url);
+                }
+                if ("GET".equalsIgnoreCase(method)) {
+                    get(context, url, headers, null, httpCallback);
+                }
+                else if ("DELETE".equalsIgnoreCase(method)) {
+                    delete(context, url, headers, httpCallback);
+                }
+                else if ("POST".equalsIgnoreCase(method)) {
+                    post(context, url, headers, body, contentType, httpCallback);                    
+                    
+                }
+                else if ("PUT".equalsIgnoreCase(method)) {
+                    put(context, url, headers, body, contentType, httpCallback);
+                }
+                else {
+                    throw new IllegalArgumentException("Illegal method: " +
+                            method + ". Only GET, POST, PUT, DELETE supported.");
+                }
             }
         }
 
@@ -383,4 +471,28 @@ public class RestAdapter extends Adapter {
             return result;
         }
     }
+
+    static protected RequestParams putInRequestParams(Map<String, ? extends Object> parameters) throws FileNotFoundException
+    {
+        RequestParams requestParams = new RequestParams();
+        
+        for (Map.Entry<String, ? extends Object> entry :
+            parameters.entrySet()) {
+            Object value = entry.getValue();
+            if ( value != null ) {
+                if ( value instanceof java.io.File ) {
+                    requestParams.put(entry.getKey(), (java.io.File)value);
+                } 
+                else if ( value instanceof String ) {
+                    requestParams.put(entry.getKey(), (String) entry.getValue());
+                }
+                else {
+                    throw new IllegalArgumentException("Unknown param type for RequestParams");
+                }
+            }
+        }
+        
+        return requestParams;
+    }
+    
 }

@@ -103,6 +103,22 @@ public class RestContract {
     }
 
     /**
+     * Gets a boolean to indicate if the item is a multipart form mime type
+     * or not.
+     * @param method The method to resolve.
+     * @return A boolean indicating multipart or not.
+     */
+    public boolean getIsMultipartForMethod(String method) {
+        if (method == null) {
+            throw new IllegalArgumentException("Method cannot be null");
+        }
+
+        RestContractItem item = items.get(method);
+
+        return item != null ? item.getIsMultipart() : false;        
+    }
+    
+    /**
      * Resolves a specific method, replacing pattern fragments with the optional
      * parameters as appropriate.
      * @param method The method to resolve.

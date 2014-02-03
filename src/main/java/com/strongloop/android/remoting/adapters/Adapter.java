@@ -22,11 +22,13 @@ public abstract class Adapter {
      * A callback that returns the HTTP response body.
      */
     public interface Callback {
+        
         /**
          * The method invoked when the call completes successfully.
          * @param response The HTTP response body.
+         * @param data - optional 0-n number of data returned
          */
-        public void onSuccess(String response);
+        public void onSuccess(String response, Object...data);
 
         /**
          * The method invoked when an error occurs.
@@ -34,7 +36,7 @@ public abstract class Adapter {
          */
         public void onError(Throwable t);
     }
-
+    
     /**
      * A callback that parses a JSON response. If the return value
      * is not valid JSON, then the {@link #onError(Throwable)} method is called.
@@ -51,7 +53,7 @@ public abstract class Adapter {
         public abstract void onSuccess(Object response);
 
         @Override
-        public void onSuccess(String response) {
+        public void onSuccess(String response, Object...data) {
         	if (response == null) {
         		onError(new JSONException("Invalid null response"));
         	}
