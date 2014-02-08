@@ -318,7 +318,12 @@ public class RestAdapter extends Adapter {
                     } 
                     else if ("GET".equalsIgnoreCase(method)) {
                         
-                        get(url, new BinaryHttpResponseHandler(new String[]{"image/jpeg", "application/json"}) {                            
+                        get(url, new BinaryHttpResponseHandler(
+                                new String[]{"image/jpeg", 
+                                        "application/json", 
+                                        "text/plain",
+                                        "image/gif",
+                                        "text/html"}) {                            
                             
                             @Override
                             public void onFailure(Throwable error, byte[] binaryData) {
